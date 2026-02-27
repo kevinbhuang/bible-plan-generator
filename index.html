@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Huang Super Awesome Cool Bible Plan Generator Pro 2.0 💪</title>
+    <title>A2N Super Awesome Cool Bible Reading Plan Generator 2.0 💪</title>
     <style>
         :root {
             /* Elegant Light Pastel Theme */
@@ -201,18 +201,21 @@
         button.primary:hover { background-color: var(--primary-hover); }
 
         .btn-export {
-            background-color: var(--primary); 
-            color: white; 
-            border-color: var(--primary); 
-            padding: 6px 12px; 
-            font-size: 0.75rem; 
+            background-color: transparent; 
+            color: var(--text-muted); 
+            border: 1px solid var(--border); 
+            padding: 4px 8px; 
+            font-size: 0.7rem; 
             text-transform: uppercase;
-            letter-spacing: 1px;
             font-weight: 600;
             border-radius: 4px;
             width: auto;
+            transition: all 0.2s ease;
         }
-        .btn-export:hover { background-color: var(--primary-hover); color: white; }
+        .btn-export:hover { 
+            border-color: var(--text-main); 
+            color: var(--text-main); 
+        }
 
         .preset-btn-group {
             display: flex;
@@ -343,7 +346,7 @@
             .cal-grid { grid-template-columns: repeat(1, 1fr); }
             .cal-day-name { display: none; }
             .cal-cell { min-height: auto; flex-direction: row; gap: 16px; align-items: center; border-top: none; border-bottom: 1px solid var(--border); }
-            .cal-cell.empty { display: none; } /* Mobile Bug Fix applied */
+            .cal-cell.empty { display: none; } 
             .cal-cell.has-plan { border-top: none; border-left: 3px solid var(--primary); }
             .cal-reading { margin: 0; }
             .cal-actions { margin-top: 0; }
@@ -361,13 +364,21 @@
             .cal-cell.completed { text-decoration: line-through; opacity: 0.6; }
             .cal-cell.empty { display: none; } 
         }
+        
+        /* Easter Egg Styling */
+        #secret-kevin {
+            cursor: default;
+            user-select: none;
+            -webkit-user-select: none;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>
-        <span>📖 Huang Super Awesome Cool Bible Plan Generator Pro 2.0 💪</span>
+        <span>📖 A2N Super Awesome Cool Bible Reading Plan Generator 2.0 <span id="secret-kevin">💪</span></span>
         <div style="display:flex; align-items:center; gap: 12px;">
             <button id="toggle-settings-btn">⚙️ Settings</button>
             <button id="theme-toggle" title="Toggle Dark/Light Mode">🌙</button>
@@ -420,8 +431,7 @@
 
             <div class="row">
                 <div class="col preset-btn-group" style="flex: 100%;">
-                    <button id="btn-kevins-plan" class="preset-btn">🎉 Kevin's Plan</button>
-                    <button id="btn-new-plan" class="preset-btn">✨ Fresh Plan</button>
+                    <button id="btn-new-plan" class="preset-btn">✨ Start new plan for ...</button>
                 </div>
             </div>
 
@@ -468,7 +478,6 @@
                 <h2 style="margin: 0;">Your Reading Schedule</h2>
                 
                 <div class="filters">
-                    <button id="btn-export-ics" class="btn-export">📅 Export (.ics)</button>
                     <div class="view-toggle">
                         <label><input type="radio" name="view-mode" value="list" checked> <span>List</span></label>
                         <label><input type="radio" name="view-mode" value="calendar"> <span>Calendar</span></label>
@@ -481,6 +490,7 @@
                     </select>
                     <label class="checkbox-label" style="font-family: system-ui, sans-serif; font-size: 0.8rem;"><input type="checkbox" id="filter-completed" checked> Hide Done</label>
                     <label class="checkbox-label" style="font-family: system-ui, sans-serif; font-size: 0.8rem;"><input type="checkbox" id="filter-skipped" checked> Hide Skipped</label>
+                    <button id="btn-export-ics" class="btn-export" title="Export to Calendar">📅 .ics</button>
                 </div>
             </div>
 
@@ -586,7 +596,6 @@ const DOM = {
     balance: document.getElementById('balance-strategy'), order: document.getElementById('reading-order'),
     daysCb: document.querySelectorAll('.day-cb'), otBooks: document.getElementById('ot-books'),
     ntBooks: document.getElementById('nt-books'), btnGen: document.getElementById('btn-generate'),
-    kevinsPlanBtn: document.getElementById('btn-kevins-plan'),
     newPlanBtn: document.getElementById('btn-new-plan'),
     exportIcsBtn: document.getElementById('btn-export-ics'),
     planSection: document.getElementById('plan-section'), tableContainer: document.getElementById('table-container'),
@@ -594,11 +603,14 @@ const DOM = {
     filters: ['filter-time', 'filter-completed', 'filter-skipped'].map(id => document.getElementById(id)),
     viewRadios: document.querySelectorAll('input[name="view-mode"]'), msg: document.getElementById('message-box'),
     toggleSettingsBtn: document.getElementById('toggle-settings-btn'), settingsSection: document.getElementById('settings-section'),
-    themeToggle: document.getElementById('theme-toggle')
+    themeToggle: document.getElementById('theme-toggle'),
+    secretKevin: document.getElementById('secret-kevin')
 };
 
 // --- 3. INIT & SETUP ---
 function init() {
+    DOM.newPlanBtn.textContent = '✨ Start new plan for ' + new Date().getFullYear();
+
     books.forEach((b, idx) => {
         const div = document.createElement('div');
         div.innerHTML = `<label class="checkbox-label" title="${b.name}"><input type="checkbox" class="book-cb" value="${idx}" checked> <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:85px;">${b.name}</span></label>`;
@@ -612,9 +624,22 @@ function init() {
     DOM.end.value = getLocalISODate(nextYear);
 
     DOM.btnGen.addEventListener('click', generateInitialPlan);
-    DOM.kevinsPlanBtn.addEventListener('click', applyKevinsPlan);
     DOM.newPlanBtn.addEventListener('click', applyNewPlan);
     DOM.exportIcsBtn.addEventListener('click', exportToICS);
+    
+    // Easter Egg Listener
+    let kevinClicks = 0;
+    let kevinTimer;
+    DOM.secretKevin.addEventListener('click', () => {
+        kevinClicks++;
+        clearTimeout(kevinTimer);
+        if (kevinClicks >= 3) {
+            kevinClicks = 0;
+            applyKevinsPlan();
+        } else {
+            kevinTimer = setTimeout(() => { kevinClicks = 0; }, 800); 
+        }
+    });
     
     DOM.toggleSettingsBtn.addEventListener('click', () => { DOM.settingsSection.classList.toggle('mobile-hidden'); });
     DOM.themeToggle.addEventListener('click', toggleTheme);
@@ -720,7 +745,7 @@ function exportToICS() {
         return showMsg("No plan to export!", "error");
     }
     
-    let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Huang Bible Plan Generator//EN\r\nCALSCALE:GREGORIAN\r\n";
+    let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//A2N Bible Plan Generator//EN\r\nCALSCALE:GREGORIAN\r\n";
     
     planState.days.forEach((day, i) => {
         if (day.skipped || day.chapters.length === 0) return; 
@@ -733,12 +758,12 @@ function exportToICS() {
         const dtEnd = getLocalISODate(d).replace(/-/g, '');
         
         icsContent += "BEGIN:VEVENT\r\n";
-        icsContent += `UID:huang-bible-plan-${day.date}-${i}@generator\r\n`;
+        icsContent += `UID:a2n-bible-plan-${day.date}-${i}@generator\r\n`;
         icsContent += `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z\r\n`;
         icsContent += `DTSTART;VALUE=DATE:${dtStart}\r\n`;
         icsContent += `DTEND;VALUE=DATE:${dtEnd}\r\n`;
         icsContent += `SUMMARY:📖 Reading: ${plainTextReading}\r\n`;
-        icsContent += `DESCRIPTION:Today's assigned Bible reading: ${plainTextReading}\\n\\nGenerated by Huang Super Awesome Cool Bible Plan Generator Pro 2.0\r\n`;
+        icsContent += `DESCRIPTION:Today's assigned Bible reading: ${plainTextReading}\\n\\nGenerated by A2N Super Awesome Cool Bible Reading Plan Generator 2.0\r\n`;
         icsContent += "END:VEVENT\r\n";
     });
     
@@ -756,6 +781,24 @@ function exportToICS() {
 }
 
 // --- QUICK PLANS LOGIC ---
+function applyNewPlan() {
+    const today = new Date();
+    DOM.start.value = getLocalISODate(today); 
+    DOM.end.value = `${today.getFullYear()}-12-31`;
+    DOM.balance.value = 'verses';
+    DOM.order.value = 'mix';
+    
+    DOM.daysCb.forEach(cb => {
+        const val = parseInt(cb.value);
+        cb.checked = (val >= 1 && val <= 5); 
+    });
+    
+    document.querySelectorAll('.book-cb').forEach(cb => cb.checked = true); 
+    
+    generateInitialPlan();
+    showMsg(`Loaded a Fresh Plan for ${today.getFullYear()}! ✨`);
+}
+
 function applyKevinsPlan() {
     DOM.start.value = '2026-01-12';
     DOM.end.value = '2026-12-22';
@@ -770,26 +813,7 @@ function applyKevinsPlan() {
     document.querySelectorAll('.book-cb').forEach(cb => cb.checked = true); 
     
     generateInitialPlan();
-    showMsg("Loaded Kevin's Plan! 🎉");
-}
-
-function applyNewPlan() {
-    const today = new Date();
-    DOM.start.value = getLocalISODate(today); 
-    // Dynamically calculate End Date to be Dec 31 of current year
-    DOM.end.value = `${today.getFullYear()}-12-31`;
-    DOM.balance.value = 'verses';
-    DOM.order.value = 'mix';
-    
-    DOM.daysCb.forEach(cb => {
-        const val = parseInt(cb.value);
-        cb.checked = (val >= 1 && val <= 5); 
-    });
-    
-    document.querySelectorAll('.book-cb').forEach(cb => cb.checked = true); 
-    
-    generateInitialPlan();
-    showMsg("Loaded a Fresh Plan! ✨");
+    showMsg("🤫 Secret Kevin's Plan Unlocked! 🎉");
 }
 
 // --- 4. GENERATION & LOGIC ---
