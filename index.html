@@ -401,6 +401,15 @@
             animation: spiritual-gains-shake 0.5s;
             animation-iteration-count: 2; /* 1 second total shake */
         }
+        .welcome-banner {
+            background: var(--bg-panel);
+            padding: 16px 32px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
     </style>
 </head>
 <body>
@@ -413,6 +422,9 @@
             <button id="theme-toggle" title="Toggle Dark/Light Mode">🌙</button>
         </div>
     </h1>
+    <p class="welcome-banner">
+        Welcome! Customize your journey by tweaking the <strong>start and end dates</strong>, selecting your preferred <strong>reading days</strong>, and choosing a <strong>balancing strategy</strong>. You can also track your <strong>progress</strong> and <strong>export</strong> your personalized plan to your calendar.
+    </p>
     <div id="message-box"></div>
 
     <div class="main-wrapper">
