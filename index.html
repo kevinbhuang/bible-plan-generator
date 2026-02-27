@@ -330,6 +330,12 @@
         }
         .msg-success { background: #e6efe9; color: #3b5947; border: 1px solid #c8dbc1;}
         .msg-error { background: #f9ebeb; color: #8c4040; border: 1px solid #ebd6d6;}
+        
+        /* Swole Message Styling */
+        .msg-swole { 
+            background: #ffebd6; color: #cc5500; border: 2px solid #ffaa44;
+            font-size: 1.1rem !important; font-weight: bold !important; text-transform: uppercase;
+        }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -366,11 +372,34 @@
         }
         
         /* Easter Egg Styling */
-        #secret-kevin {
+        #secret-muscle {
             cursor: default;
             user-select: none;
             -webkit-user-select: none;
             display: inline-block;
+            transition: transform 0.1s;
+        }
+        #secret-muscle:active {
+            transform: scale(0.9);
+        }
+
+        /* The Screen Shake Animation */
+        @keyframes spiritual-gains-shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .shake-active {
+            animation: spiritual-gains-shake 0.5s;
+            animation-iteration-count: 2; /* 1 second total shake */
         }
     </style>
 </head>
@@ -378,7 +407,7 @@
 
 <div class="container">
     <h1>
-        <span>📖 A2N Super Awesome Cool Bible Reading Plan Generator 2.0 <span id="secret-kevin">💪</span></span>
+        <span>📖 A2N Super Awesome Cool Bible Reading Plan Generator 2.0 <span id="secret-muscle" title="Tap me 3 times!">💪</span></span>
         <div style="display:flex; align-items:center; gap: 12px;">
             <button id="toggle-settings-btn">⚙️ Settings</button>
             <button id="theme-toggle" title="Toggle Dark/Light Mode">🌙</button>
@@ -604,7 +633,7 @@ const DOM = {
     viewRadios: document.querySelectorAll('input[name="view-mode"]'), msg: document.getElementById('message-box'),
     toggleSettingsBtn: document.getElementById('toggle-settings-btn'), settingsSection: document.getElementById('settings-section'),
     themeToggle: document.getElementById('theme-toggle'),
-    secretKevin: document.getElementById('secret-kevin')
+    secretMuscle: document.getElementById('secret-muscle')
 };
 
 // --- 3. INIT & SETUP ---
@@ -627,17 +656,17 @@ function init() {
     DOM.newPlanBtn.addEventListener('click', applyNewPlan);
     DOM.exportIcsBtn.addEventListener('click', exportToICS);
     
-    // Easter Egg Listener
-    let kevinClicks = 0;
-    let kevinTimer;
-    DOM.secretKevin.addEventListener('click', () => {
-        kevinClicks++;
-        clearTimeout(kevinTimer);
-        if (kevinClicks >= 3) {
-            kevinClicks = 0;
-            applyKevinsPlan();
+    // Easter Egg Listener: Spiritual Gains Shake
+    let muscleClicks = 0;
+    let muscleTimer;
+    DOM.secretMuscle.addEventListener('click', () => {
+        muscleClicks++;
+        clearTimeout(muscleTimer);
+        if (muscleClicks >= 3) {
+            muscleClicks = 0;
+            triggerSpiritualGains();
         } else {
-            kevinTimer = setTimeout(() => { kevinClicks = 0; }, 800); 
+            muscleTimer = setTimeout(() => { muscleClicks = 0; }, 800); 
         }
     });
     
@@ -668,6 +697,18 @@ function init() {
     } else {
         generateInitialPlan();
     }
+}
+
+function triggerSpiritualGains() {
+    // 1. Shake the screen
+    document.body.classList.add('shake-active');
+    setTimeout(() => { document.body.classList.remove('shake-active'); }, 1000);
+    
+    // 2. Show the swole banner
+    DOM.msg.textContent = "SPIRITUAL GAINS INCOMING! Time to get swole in the Word! 💪🔥";
+    DOM.msg.className = 'msg-swole';
+    DOM.msg.style.display = 'block'; 
+    setTimeout(() => DOM.msg.style.display = 'none', 4000);
 }
 
 function loadSavedFilters() {
@@ -799,23 +840,6 @@ function applyNewPlan() {
     showMsg(`Loaded a Fresh Plan for ${today.getFullYear()}! ✨`);
 }
 
-function applyKevinsPlan() {
-    DOM.start.value = '2026-01-12';
-    DOM.end.value = '2026-12-22';
-    DOM.balance.value = 'verses';
-    DOM.order.value = 'mix';
-    
-    DOM.daysCb.forEach(cb => {
-        const val = parseInt(cb.value);
-        cb.checked = (val >= 1 && val <= 5); 
-    });
-    
-    document.querySelectorAll('.book-cb').forEach(cb => cb.checked = true); 
-    
-    generateInitialPlan();
-    showMsg("🤫 Secret Kevin's Plan Unlocked! 🎉");
-}
-
 // --- 4. GENERATION & LOGIC ---
 function gatherSettings() {
     const selectedBooks = Array.from(document.querySelectorAll('.book-cb:checked')).map(cb => parseInt(cb.value));
@@ -887,7 +911,7 @@ function generateInitialPlan() {
 
     DOM.settingsSection.classList.add('mobile-hidden');
     saveAndRender();
-    if (DOM.msg.style.display !== 'block') {
+    if (DOM.msg.style.display !== 'block' && DOM.msg.className !== 'msg-swole') {
         showMsg("Plan generated successfully!");
     }
 }
