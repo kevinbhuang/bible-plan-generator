@@ -495,23 +495,6 @@
                 </div>
             </div>
 
-            <div id="plan-management-zone" style="margin-top: 24px; border: 1px solid var(--primary); border-radius: 4px; padding: 16px; background: var(--today-bg);">
-                <h3 style="font-size: 0.9rem; text-transform: uppercase; color: var(--primary); margin-bottom: 12px; font-family: system-ui, sans-serif; font-weight: 700;">💾 Plan Management</h3>
-
-                <div style="margin-bottom: 16px;">
-                    <label style="color: var(--text-main); font-size: 0.7rem;">Save Current Plan & Progress</label>
-                    <div style="display: flex; gap: 8px; margin-top: 4px;">
-                        <input type="text" id="save-plan-name-input" placeholder="e.g. My 2026 Plan" style="flex: 1; font-size: 0.8rem; padding: 8px;">
-                        <button id="btn-save-instance" style="width: auto; background: var(--primary); color: white; border: none; padding: 0 12px; font-size: 0.8rem; cursor: pointer;">Save</button>
-                    </div>
-                </div>
-
-                <div id="saved-plans-section">
-                    <label style="color: var(--text-main); font-size: 0.7rem; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 8px;">Your Saved Plans</label>
-                    <div id="saved-plans-list" style="max-height: 200px; overflow-y: auto;"></div>
-                </div>
-            </div>
-
             <div style="margin-top: 24px;">
                 <label style="border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">Included Books</label>
                 <div class="books-container">
@@ -539,6 +522,23 @@
             </div>
             
             <button class="primary" id="btn-generate">Generate Plan</button>
+
+            <div id="plan-management-zone" style="margin-top: 24px; border: 1px solid var(--border); border-radius: 4px; padding: 12px; background: transparent;">
+                <h3 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; font-family: system-ui, sans-serif; font-weight: 700;">💾 Plan Management</h3>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="color: var(--text-muted); font-size: 0.65rem;">Save Current Plan & Progress</label>
+                    <div style="display: flex; gap: 8px; margin-top: 4px;">
+                        <input type="text" id="save-plan-name-input" placeholder="e.g. My 2026 Plan" style="flex: 1; font-size: 0.8rem; padding: 8px;">
+                        <button id="btn-save-instance" style="width: auto; background: var(--primary); color: white; border: none; padding: 0 12px; font-size: 0.8rem; cursor: pointer;">Save</button>
+                    </div>
+                </div>
+
+                <div id="saved-plans-section">
+                    <label style="color: var(--text-muted); font-size: 0.65rem; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 8px;">Your Saved Plans</label>
+                    <div id="saved-plans-list" style="max-height: 150px; overflow-y: auto;"></div>
+                </div>
+            </div>
         </div>
 
         <div class="panel plan-panel" id="plan-section" style="display: none;">
