@@ -412,7 +412,7 @@
         }
 
         /* Saved Plans Section */
-        #saved-plans-container { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+        #saved-plans-section { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
         .saved-plan-item {
             display: flex; justify-content: space-between; align-items: center;
             padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px;
@@ -495,7 +495,22 @@
                 </div>
             </div>
 
-            <div id="saved-plans-container"></div>
+            <div id="plan-management-zone" style="margin-top: 24px; border: 1px solid var(--primary); border-radius: 4px; padding: 16px; background: var(--today-bg);">
+                <h3 style="font-size: 0.9rem; text-transform: uppercase; color: var(--primary); margin-bottom: 12px; font-family: system-ui, sans-serif; font-weight: 700;">💾 Plan Management</h3>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="color: var(--text-main); font-size: 0.7rem;">Save Current Plan & Progress</label>
+                    <div style="display: flex; gap: 8px; margin-top: 4px;">
+                        <input type="text" id="save-plan-name-input" placeholder="e.g. My 2026 Plan" style="flex: 1; font-size: 0.8rem; padding: 8px;">
+                        <button id="btn-save-instance" style="width: auto; background: var(--primary); color: white; border: none; padding: 0 12px; font-size: 0.8rem; cursor: pointer;">Save</button>
+                    </div>
+                </div>
+
+                <div id="saved-plans-section">
+                    <label style="color: var(--text-main); font-size: 0.7rem; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 8px;">Your Saved Plans</label>
+                    <div id="saved-plans-list" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+            </div>
 
             <div style="margin-top: 24px;">
                 <label style="border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">Included Books</label>
@@ -552,7 +567,7 @@
                     </select>
                     <label class="checkbox-label" style="font-family: system-ui, sans-serif; font-size: 0.8rem;"><input type="checkbox" id="filter-completed" checked> Hide Done</label>
                     <label class="checkbox-label" style="font-family: system-ui, sans-serif; font-size: 0.8rem;"><input type="checkbox" id="filter-skipped" checked> Hide Skipped</label>
-                    <button id="btn-save-plan" class="btn-export" title="Save Plan">💾 Save</button>
+                    <button id="btn-save-plan" class="btn-export" style="background: var(--primary); color: white; border-color: var(--primary);" title="Save Plan">💾 Save</button>
                     <button id="btn-export-ics" class="btn-export" title="Export to Calendar">📅 .ics</button>
                 </div>
             </div>
@@ -661,8 +676,10 @@ const DOM = {
     daysCb: document.querySelectorAll('.day-cb'), otBooks: document.getElementById('ot-books'),
     ntBooks: document.getElementById('nt-books'), btnGen: document.getElementById('btn-generate'),
     newPlanBtn: document.getElementById('btn-new-plan'),
+    savePlanNameInput: document.getElementById('save-plan-name-input'),
+    btnSaveInstance: document.getElementById('btn-save-instance'),
     savePlanBtn: document.getElementById('btn-save-plan'),
-    savedPlansContainer: document.getElementById('saved-plans-container'),
+    savedPlansList: document.getElementById('saved-plans-list'),
     exportIcsBtn: document.getElementById('btn-export-ics'),
     planSection: document.getElementById('plan-section'), tableContainer: document.getElementById('table-container'),
     calendarContainer: document.getElementById('calendar-container'), tbody: document.getElementById('plan-tbody'),
@@ -680,7 +697,9 @@ function init() {
         if (saved) savedPlans = JSON.parse(saved);
     } catch (e) { console.error("Could not parse saved plans", e); }
 
-    DOM.newPlanBtn.textContent = '✨ Start new plan for ' + new Date().getFullYear();
+    if (DOM.newPlanBtn) {
+        DOM.newPlanBtn.textContent = '✨ Start new plan for ' + new Date().getFullYear();
+    }
 
     books.forEach((b, idx) => {
         const div = document.createElement('div');
@@ -696,7 +715,14 @@ function init() {
 
     DOM.btnGen.addEventListener('click', generateInitialPlan);
     DOM.newPlanBtn.addEventListener('click', applyNewPlan);
-    DOM.savePlanBtn.addEventListener('click', savePlan);
+    DOM.btnSaveInstance.addEventListener('click', savePlanFromInput);
+    DOM.savePlanBtn.addEventListener('click', () => {
+        // When clicking the save button in the plan panel, scroll to the save input and focus it
+        DOM.settingsSection.classList.remove('mobile-hidden');
+        DOM.savePlanNameInput.focus();
+        DOM.savePlanNameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showMsg("Enter a name in the settings panel to save your plan! ✍️", "success");
+    });
     DOM.exportIcsBtn.addEventListener('click', exportToICS);
     
     // Easter Egg Listener: Spiritual Gains Shake
@@ -799,12 +825,14 @@ function showMsg(text, type='success') {
     DOM.msg.style.display = 'block'; setTimeout(() => DOM.msg.style.display = 'none', 3000);
 }
 
-function savePlan() {
+function savePlanFromInput() {
     if (!planState || !planState.days || planState.days.length === 0) {
-        return showMsg("No plan to save!", "error");
+        return showMsg("Generate a plan first before saving!", "error");
     }
-    const name = prompt("Enter a name for this plan:");
-    if (!name) return;
+    const name = DOM.savePlanNameInput.value.trim();
+    if (!name) {
+        return showMsg("Please enter a name for your plan.", "error");
+    }
 
     const planToSave = JSON.parse(JSON.stringify(planState));
     planToSave.name = name;
@@ -813,21 +841,16 @@ function savePlan() {
     savedPlans.push(planToSave);
     localStorage.setItem('huangSavedPlans', JSON.stringify(savedPlans));
     showMsg(`Plan "${name}" saved! 💾`);
+    DOM.savePlanNameInput.value = ''; // Clear input
     renderSavedPlans();
 }
 
 function renderSavedPlans() {
-    DOM.savedPlansContainer.innerHTML = '';
+    DOM.savedPlansList.innerHTML = '';
     if (savedPlans.length === 0) {
-        DOM.savedPlansContainer.style.display = 'none';
+        DOM.savedPlansList.innerHTML = '<div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; padding: 10px 0;">No saved plans yet</div>';
         return;
     }
-    DOM.savedPlansContainer.style.display = 'block';
-
-    const title = document.createElement('label');
-    title.style = 'border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;';
-    title.textContent = 'Saved Plans';
-    DOM.savedPlansContainer.appendChild(title);
 
     savedPlans.forEach((plan, idx) => {
         const item = document.createElement('div');
@@ -871,7 +894,7 @@ function renderSavedPlans() {
         item.appendChild(infoDiv);
         item.appendChild(actionsDiv);
 
-        DOM.savedPlansContainer.appendChild(item);
+        DOM.savedPlansList.appendChild(item);
     });
 }
 
@@ -999,7 +1022,11 @@ function applySettingsToUI(settings) {
     if(settings.readingOrder) DOM.order.value = settings.readingOrder;
     else if(settings.mixTestaments !== undefined) DOM.order.value = settings.mixTestaments ? 'mix' : 'sequential'; 
     if(settings.days) DOM.daysCb.forEach(cb => cb.checked = settings.days.includes(parseInt(cb.value)));
-    if(settings.books) document.querySelectorAll('.book-cb').forEach(cb => cb.checked = settings.books.includes(parseInt(cb.value)));
+    if(settings.books) {
+        document.querySelectorAll('.book-cb').forEach(cb => {
+            cb.checked = settings.books.includes(parseInt(cb.value));
+        });
+    }
 }
 
 function getValidDates(startStr, endStr, allowedDaysOfWeek) {
