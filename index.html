@@ -410,6 +410,25 @@
             font-size: 0.95rem;
             color: var(--text-main);
         }
+
+        /* Saved Plans Section */
+        #saved-plans-section { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+        .saved-plan-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px;
+            margin-bottom: 8px; background: var(--bg-body); transition: transform 0.2s;
+        }
+        .saved-plan-item:hover { transform: translateX(4px); border-color: var(--primary); }
+        .saved-plan-info { flex: 1; min-width: 0; }
+        .saved-plan-name { font-weight: 600; font-size: 0.85rem; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .saved-plan-date { font-size: 0.7rem; color: var(--text-muted); font-family: system-ui, sans-serif; }
+        .saved-plan-actions { display: flex; gap: 6px; }
+        .saved-plan-actions button {
+            padding: 4px 8px; font-size: 0.65rem; width: auto; text-transform: uppercase;
+            background: var(--bg-panel); border: 1px solid var(--border);
+        }
+        .btn-load:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-delete:hover { border-color: #8c4040; color: #8c4040; }
     </style>
 </head>
 <body>
@@ -503,6 +522,23 @@
             </div>
             
             <button class="primary" id="btn-generate">Generate Plan</button>
+
+            <div id="plan-management-zone" style="margin-top: 24px; border: 1px solid var(--border); border-radius: 4px; padding: 12px; background: transparent;">
+                <h3 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; font-family: system-ui, sans-serif; font-weight: 700;">💾 Plan Management</h3>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="color: var(--text-muted); font-size: 0.65rem;">Save Current Plan & Progress</label>
+                    <div style="display: flex; gap: 8px; margin-top: 4px;">
+                        <input type="text" id="save-plan-name-input" placeholder="e.g. My 2026 Plan" style="flex: 1; font-size: 0.8rem; padding: 8px;">
+                        <button id="btn-save-instance" style="width: auto; background: var(--primary); color: white; border: none; padding: 0 12px; font-size: 0.8rem; cursor: pointer;">Save</button>
+                    </div>
+                </div>
+
+                <div id="saved-plans-section">
+                    <label style="color: var(--text-muted); font-size: 0.65rem; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 8px;">Your Saved Plans</label>
+                    <div id="saved-plans-list" style="max-height: 150px; overflow-y: auto;"></div>
+                </div>
+            </div>
         </div>
 
         <div class="panel plan-panel" id="plan-section" style="display: none;">
@@ -531,6 +567,7 @@
                     </select>
                     <label class="checkbox-label" style="font-family: system-ui, sans-serif; font-size: 0.8rem;"><input type="checkbox" id="filter-completed" checked> Hide Done</label>
                     <label class="checkbox-label" style="font-family: system-ui, sans-serif; font-size: 0.8rem;"><input type="checkbox" id="filter-skipped" checked> Hide Skipped</label>
+                    <button id="btn-save-plan" class="btn-export" style="background: var(--primary); color: white; border-color: var(--primary);" title="Save Plan">💾 Save</button>
                     <button id="btn-export-ics" class="btn-export" title="Export to Calendar">📅 .ics</button>
                 </div>
             </div>
@@ -632,12 +669,17 @@ const chronoOrderMap = { "Gen": 1, "Job": 2, "Exod": 3, "Lev": 4, "Num": 5, "Deu
 
 // --- 2. STATE & DOM ELEMENTS ---
 let planState = { settings: {}, days: [] };
+let savedPlans = [];
 const DOM = {
     start: document.getElementById('start-date'), end: document.getElementById('end-date'),
     balance: document.getElementById('balance-strategy'), order: document.getElementById('reading-order'),
     daysCb: document.querySelectorAll('.day-cb'), otBooks: document.getElementById('ot-books'),
     ntBooks: document.getElementById('nt-books'), btnGen: document.getElementById('btn-generate'),
     newPlanBtn: document.getElementById('btn-new-plan'),
+    savePlanNameInput: document.getElementById('save-plan-name-input'),
+    btnSaveInstance: document.getElementById('btn-save-instance'),
+    savePlanBtn: document.getElementById('btn-save-plan'),
+    savedPlansList: document.getElementById('saved-plans-list'),
     exportIcsBtn: document.getElementById('btn-export-ics'),
     planSection: document.getElementById('plan-section'), tableContainer: document.getElementById('table-container'),
     calendarContainer: document.getElementById('calendar-container'), tbody: document.getElementById('plan-tbody'),
@@ -650,7 +692,14 @@ const DOM = {
 
 // --- 3. INIT & SETUP ---
 function init() {
-    DOM.newPlanBtn.textContent = '✨ Start new plan for ' + new Date().getFullYear();
+    try {
+        const saved = localStorage.getItem('huangSavedPlans');
+        if (saved) savedPlans = JSON.parse(saved);
+    } catch (e) { console.error("Could not parse saved plans", e); }
+
+    if (DOM.newPlanBtn) {
+        DOM.newPlanBtn.textContent = '✨ Start new plan for ' + new Date().getFullYear();
+    }
 
     books.forEach((b, idx) => {
         const div = document.createElement('div');
@@ -666,6 +715,14 @@ function init() {
 
     DOM.btnGen.addEventListener('click', generateInitialPlan);
     DOM.newPlanBtn.addEventListener('click', applyNewPlan);
+    DOM.btnSaveInstance.addEventListener('click', savePlanFromInput);
+    DOM.savePlanBtn.addEventListener('click', () => {
+        // When clicking the save button in the plan panel, scroll to the save input and focus it
+        DOM.settingsSection.classList.remove('mobile-hidden');
+        DOM.savePlanNameInput.focus();
+        DOM.savePlanNameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showMsg("Enter a name in the settings panel to save your plan! ✍️", "success");
+    });
     DOM.exportIcsBtn.addEventListener('click', exportToICS);
     
     // Easter Egg Listener: Spiritual Gains Shake
@@ -709,6 +766,7 @@ function init() {
     } else {
         generateInitialPlan();
     }
+    renderSavedPlans();
 }
 
 function triggerSpiritualGains() {
@@ -765,6 +823,100 @@ function toggleTheme() {
 function showMsg(text, type='success') {
     DOM.msg.textContent = text; DOM.msg.className = type === 'success' ? 'msg-success' : 'msg-error';
     DOM.msg.style.display = 'block'; setTimeout(() => DOM.msg.style.display = 'none', 3000);
+}
+
+function savePlanFromInput() {
+    if (!planState || !planState.days || planState.days.length === 0) {
+        return showMsg("Generate a plan first before saving!", "error");
+    }
+    const name = DOM.savePlanNameInput.value.trim();
+    if (!name) {
+        return showMsg("Please enter a name for your plan.", "error");
+    }
+
+    const planToSave = JSON.parse(JSON.stringify(planState));
+    planToSave.name = name;
+    planToSave.savedAt = new Date().toISOString();
+
+    savedPlans.push(planToSave);
+    localStorage.setItem('huangSavedPlans', JSON.stringify(savedPlans));
+    showMsg(`Plan "${name}" saved! 💾`);
+    DOM.savePlanNameInput.value = ''; // Clear input
+    renderSavedPlans();
+}
+
+function renderSavedPlans() {
+    DOM.savedPlansList.innerHTML = '';
+    if (savedPlans.length === 0) {
+        DOM.savedPlansList.innerHTML = '<div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; padding: 10px 0;">No saved plans yet</div>';
+        return;
+    }
+
+    savedPlans.forEach((plan, idx) => {
+        const item = document.createElement('div');
+        item.className = 'saved-plan-item';
+
+        const date = new Date(plan.savedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+        // Use DOM methods to avoid XSS from user-provided plan names
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'saved-plan-info';
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'saved-plan-name';
+        nameDiv.textContent = plan.name;
+
+        const dateDiv = document.createElement('div');
+        dateDiv.className = 'saved-plan-date';
+        dateDiv.textContent = `Saved on ${date}`;
+
+        infoDiv.appendChild(nameDiv);
+        infoDiv.appendChild(dateDiv);
+
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'saved-plan-actions';
+
+        const loadBtn = document.createElement('button');
+        loadBtn.className = 'btn-load';
+        loadBtn.textContent = 'Load';
+        loadBtn.title = 'Load Plan';
+        loadBtn.onclick = () => loadPlan(idx);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.title = 'Delete Plan';
+        deleteBtn.onclick = () => deletePlan(idx);
+
+        actionsDiv.appendChild(loadBtn);
+        actionsDiv.appendChild(deleteBtn);
+
+        item.appendChild(infoDiv);
+        item.appendChild(actionsDiv);
+
+        DOM.savedPlansList.appendChild(item);
+    });
+}
+
+function loadPlan(idx) {
+    if (!confirm(`Switch to plan "${savedPlans[idx].name}"? Current plan changes will be lost.`)) return;
+
+    planState = JSON.parse(JSON.stringify(savedPlans[idx]));
+    applySettingsToUI(planState.settings);
+    if (DOM.settingsSection) {
+        DOM.settingsSection.classList.add('mobile-hidden');
+    }
+    saveAndRender();
+    showMsg(`Plan "${planState.name}" loaded! 📖`);
+}
+
+function deletePlan(idx) {
+    if (!confirm(`Are you sure you want to delete the plan "${savedPlans[idx].name}"?`)) return;
+
+    savedPlans.splice(idx, 1);
+    localStorage.setItem('huangSavedPlans', JSON.stringify(savedPlans));
+    renderSavedPlans();
+    showMsg("Plan deleted.");
 }
 
 function toggleBooks(testament, check) {
@@ -870,7 +1022,11 @@ function applySettingsToUI(settings) {
     if(settings.readingOrder) DOM.order.value = settings.readingOrder;
     else if(settings.mixTestaments !== undefined) DOM.order.value = settings.mixTestaments ? 'mix' : 'sequential'; 
     if(settings.days) DOM.daysCb.forEach(cb => cb.checked = settings.days.includes(parseInt(cb.value)));
-    if(settings.books) document.querySelectorAll('.book-cb').forEach(cb => cb.checked = settings.books.includes(parseInt(cb.value)));
+    if(settings.books) {
+        document.querySelectorAll('.book-cb').forEach(cb => {
+            cb.checked = settings.books.includes(parseInt(cb.value));
+        });
+    }
 }
 
 function getValidDates(startStr, endStr, allowedDaysOfWeek) {
@@ -923,9 +1079,7 @@ function generateInitialPlan() {
 
     DOM.settingsSection.classList.add('mobile-hidden');
     saveAndRender();
-    if (DOM.msg.style.display !== 'block' && DOM.msg.className !== 'msg-swole') {
-        showMsg("Plan generated successfully!");
-    }
+    showMsg("Plan generated successfully!");
 }
 
 function distributeLogic(chaptersPool, numDays, strategy) {
