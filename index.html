@@ -1052,9 +1052,7 @@ function generateInitialPlan() {
 
     DOM.settingsSection.classList.add('mobile-hidden');
     saveAndRender();
-    if (DOM.msg.style.display !== 'block' && DOM.msg.className !== 'msg-swole') {
-        showMsg("Plan generated successfully!");
-    }
+    showMsg("Plan generated successfully!");
 }
 
 function distributeLogic(chaptersPool, numDays, strategy) {
