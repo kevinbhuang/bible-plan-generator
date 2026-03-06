@@ -1224,13 +1224,25 @@ function getFilterParams() {
     const timeFilter = document.getElementById('filter-time').value;
     const hideCompleted = document.getElementById('filter-completed').checked;
     const hideSkipped = document.getElementById('filter-skipped').checked;
-    let cutoffDate = null;
-    if (timeFilter !== 'all') {
-        cutoffDate = new Date(); cutoffDate.setDate(cutoffDate.getDate() + parseInt(timeFilter));
-        cutoffDate = getLocalISODate(cutoffDate);
-    }
     const todayStr = getLocalISODate(new Date());
-    return { timeFilter, hideCompleted, hideSkipped, cutoffDate, todayStr };
+    return { timeFilter, hideCompleted, hideSkipped, todayStr };
+}
+
+function getVisibleDayIndices() {
+    const { timeFilter, hideCompleted, hideSkipped, todayStr } = getFilterParams();
+    const visibleIndices = [];
+
+    planState.days.forEach((day, idx) => {
+        if (hideCompleted && day.completed) return;
+        if (hideSkipped && day.skipped) return;
+        if (timeFilter !== 'all' && day.date < todayStr) return;
+        visibleIndices.push(idx);
+    });
+
+    if (timeFilter === 'all') return visibleIndices;
+
+    const dayLimit = parseInt(timeFilter, 10);
+    return visibleIndices.slice(0, dayLimit);
 }
 
 function renderPlan() {
@@ -1248,12 +1260,11 @@ function renderPlan() {
 
 function renderPlanList() {
     DOM.tbody.innerHTML = '';
-    const { hideCompleted, hideSkipped, cutoffDate, todayStr } = getFilterParams();
+    const { todayStr } = getFilterParams();
+    const visibleIndices = getVisibleDayIndices();
 
-    planState.days.forEach((day, idx) => {
-        if (hideCompleted && day.completed) return;
-        if (hideSkipped && day.skipped) return;
-        if (cutoffDate && day.date > cutoffDate && day.date >= todayStr) return;
+    visibleIndices.forEach(idx => {
+        const day = planState.days[idx];
 
         const tr = document.createElement('tr');
         if (day.completed) tr.classList.add('completed');
@@ -1282,7 +1293,9 @@ function renderPlanList() {
 
 function renderPlanCalendar() {
     DOM.calendarContainer.innerHTML = '';
-    const { hideCompleted, hideSkipped, cutoffDate, todayStr } = getFilterParams();
+    const { todayStr } = getFilterParams();
+    const visibleIndices = getVisibleDayIndices();
+    const visibleSet = new Set(visibleIndices.map(idx => planState.days[idx].date));
     const dayLookup = {}; planState.days.forEach((d, idx) => { dayLookup[d.date] = { ...d, originalIdx: idx }; });
 
     const startD = new Date(planState.days[0].date + 'T00:00:00');
@@ -1309,13 +1322,7 @@ function renderPlanCalendar() {
             const dateStr = getLocalISODate(new Date(y, m, i));
             const cell = document.createElement('div'); cell.className = 'cal-cell';
             const planData = dayLookup[dateStr];
-            
-            let isFilteredOut = false;
-            if (planData) {
-                if (hideCompleted && planData.completed) isFilteredOut = true;
-                if (hideSkipped && planData.skipped) isFilteredOut = true;
-                if (cutoffDate && dateStr > cutoffDate && dateStr >= todayStr) isFilteredOut = true;
-            }
+            const isFilteredOut = planData && !visibleSet.has(dateStr);
 
             if (!planData || isFilteredOut) {
                 cell.classList.add('empty'); cell.innerHTML = `<div class="cal-date-row" style="color:var(--text-muted); opacity:0.5;">${i}</div>`;
