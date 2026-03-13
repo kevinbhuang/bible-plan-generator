@@ -222,7 +222,7 @@
         .preset-btn-group {
             display: flex;
             gap: 12px;
-            margin-top: -8px; 
+            margin-top: 0;
         }
         .preset-btn {
             font-size: 0.75rem;
@@ -243,15 +243,16 @@
         #theme-toggle:hover { transform: scale(1.1); background: transparent; }
         #toggle-settings-btn { display: none; }
 
-        .books-container { display: flex; flex-direction: column; gap: 16px; }
+        .books-container { display: flex; flex-direction: column; gap: 10px; }
         .testament-col { width: 100%; }
-        .testament-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px;}
+        .testament-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid var(--border); padding-bottom: 4px;}
         .testament-header strong { font-family: system-ui, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
         .book-grid { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); gap: 6px; 
-            max-height: 160px; overflow-y: auto; padding: 4px 0; 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); gap: 4px; 
+            max-height: 108px; overflow-y: auto; padding: 2px 0; 
         }
         .book-actions button { padding: 2px 8px; font-size: 0.7rem; width: auto; text-transform: uppercase; background: transparent; border: 1px solid var(--border); }
+        .compact-books-section { margin-top: 18px; }
 
         .plan-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 
@@ -491,13 +492,7 @@
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col preset-btn-group" style="flex: 100%;">
-                    <button id="btn-new-plan" class="preset-btn">✨ Start new plan for ...</button>
-                </div>
-            </div>
-
-            <div style="margin-top: 24px;">
+            <div class="compact-books-section">
                 <label style="border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">Included Books</label>
                 <div class="books-container">
                     <div class="testament-col">
@@ -525,13 +520,19 @@
             
             <button class="primary" id="btn-generate">Generate Plan</button>
 
+            <div class="row">
+                <div class="col preset-btn-group" style="flex: 100%;">
+                    <button id="btn-new-plan" class="preset-btn">Quick Start: Start New Current Year Plan</button>
+                </div>
+            </div>
+
             <div id="plan-management-zone" style="margin-top: 24px; border: 1px solid var(--border); border-radius: 4px; padding: 12px; background: transparent;">
                 <h3 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; font-family: system-ui, sans-serif; font-weight: 700;">💾 Plan Management</h3>
 
                 <div style="margin-bottom: 16px;">
                     <label style="color: var(--text-muted); font-size: 0.65rem;">Save Current Plan & Progress</label>
                     <div style="display: flex; gap: 8px; margin-top: 4px;">
-                        <input type="text" id="save-plan-name-input" placeholder="e.g. My 2026 Plan" style="flex: 1; font-size: 0.8rem; padding: 8px;">
+                        <input type="text" id="save-plan-name-input" placeholder="e.g. My Current Year Plan" style="flex: 1; font-size: 0.8rem; padding: 8px;">
                         <button id="btn-save-instance" style="width: auto; background: var(--primary); color: white; border: none; padding: 0 12px; font-size: 0.8rem; cursor: pointer;">Save</button>
                     </div>
                 </div>
@@ -699,8 +700,12 @@ function init() {
         if (saved) savedPlans = JSON.parse(saved);
     } catch (e) { console.error("Could not parse saved plans", e); }
 
+    const currentYear = new Date().getFullYear();
     if (DOM.newPlanBtn) {
-        DOM.newPlanBtn.textContent = '✨ Start new plan for ' + new Date().getFullYear();
+        DOM.newPlanBtn.textContent = 'Quick Start: Start New ' + currentYear + ' Plan';
+    }
+    if (DOM.savePlanNameInput) {
+        DOM.savePlanNameInput.placeholder = 'e.g. My ' + currentYear + ' Plan';
     }
 
     books.forEach((b, idx) => {
