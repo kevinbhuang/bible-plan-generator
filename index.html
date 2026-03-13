@@ -224,6 +224,11 @@
             gap: 12px;
             margin-top: 0;
         }
+        .quick-start-row {
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
         .preset-btn {
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -231,6 +236,7 @@
             color: var(--text-muted);
             padding: 8px 10px;
             font-weight: 600;
+            width: 100%;
         }
         .preset-btn:hover {
             color: var(--text-main);
@@ -520,7 +526,7 @@
             
             <button class="primary" id="btn-generate">Generate Plan</button>
 
-            <div class="row">
+            <div class="row quick-start-row">
                 <div class="col preset-btn-group" style="flex: 100%;">
                     <button id="btn-new-plan" class="preset-btn">Quick Start: Start New Current Year Plan</button>
                 </div>
